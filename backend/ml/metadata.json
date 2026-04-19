@@ -1,0 +1,92 @@
+{
+  "feature_cols": [
+    "N",
+    "P",
+    "K",
+    "temperature",
+    "humidity",
+    "ph",
+    "rainfall",
+    "N_P_ratio",
+    "N_K_ratio",
+    "nutrient_sum",
+    "climate_index",
+    "soil_moisture"
+  ],
+  "crops": [
+    "apple",
+    "banana",
+    "blackgram",
+    "chickpea",
+    "coconut",
+    "coffee",
+    "cotton",
+    "grapes",
+    "jute",
+    "kidneybeans",
+    "lentil",
+    "maize",
+    "mango",
+    "mothbeans",
+    "mungbean",
+    "muskmelon",
+    "orange",
+    "papaya",
+    "pigeonpeas",
+    "pomegranate",
+    "rice",
+    "watermelon"
+  ],
+  "accuracy": 0.9954545454545455,
+  "cv_mean": 0.9920454545454545,
+  "feature_importance": [
+    {
+      "feature": "humidity",
+      "importance": 0.14428488925133046
+    },
+    {
+      "feature": "rainfall",
+      "importance": 0.14287403619328967
+    },
+    {
+      "feature": "K",
+      "importance": 0.12625703239269087
+    },
+    {
+      "feature": "soil_moisture",
+      "importance": 0.12607892101188606
+    },
+    {
+      "feature": "P",
+      "importance": 0.10160125223454058
+    },
+    {
+      "feature": "nutrient_sum",
+      "importance": 0.08844367470714393
+    },
+    {
+      "feature": "climate_index",
+      "importance": 0.07543002926212211
+    },
+    {
+      "feature": "N",
+      "importance": 0.06107363093923508
+    },
+    {
+      "feature": "N_K_ratio",
+      "importance": 0.04254629930844807
+    },
+    {
+      "feature": "N_P_ratio",
+      "importance": 0.033866154516620804
+    },
+    {
+      "feature": "temperature",
+      "importance": 0.030740747623259825
+    },
+    {
+      "feature": "ph",
+      "importance": 0.02680333255943249
+    }
+  ]
+}
