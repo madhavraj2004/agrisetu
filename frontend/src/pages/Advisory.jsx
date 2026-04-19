@@ -155,7 +155,56 @@ export default function Advisory() {
             <button type="submit" style={s.btn} disabled={loading}>
               {loading ? "Analysing... (may take 20s on first load)" : "Get Crop Recommendation"}            </button>
           </form>
+            {/* Auto-fill weather button */}
+            <button
+              type="button"
+              style={{
+                ...s.sampleBtn,
+                marginBottom: 8,
+                background: "#EFF6FF",
+                borderColor: "#3B82F6",
+                color: "#1D4ED8"
+              }}
+              onClick={async () => {
+                if (!navigator.geolocation) {
+                  alert("Geolocation not supported by your browser");
+                  return;
+                }
 
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                  try {
+                    const { latitude, longitude } = pos.coords;
+
+                    const res = await fetch(
+                      `https://agrisetu-fi4b.onrender.com/api/weather?lat=${latitude}&lon=${longitude}`
+                    );
+
+                    const data = await res.json();
+
+                    if (data.error) {
+                      alert("Weather API: " + data.error);
+                      return;
+                    }
+
+                    setForm(prev => ({
+                      ...prev,
+                      temperature: data.temperature.toString(),
+                      humidity: data.humidity.toString(),
+                      rainfall: data.rainfall.toString(),
+                    }));
+
+                    alert(`📍 ${data.city}\n🌡️ ${data.temperature}°C\n💧 ${data.humidity}%\n🌧️ ${data.rainfall}mm`);
+
+                  } catch (err) {
+                    alert("Could not fetch weather: " + err.message);
+                  }
+                }, () => {
+                  alert("Location access denied");
+                });
+              }}
+            >
+              📍 Auto-fill weather from my location
+            </button>
           {/* Sample data button for quick demo */}
           <button style={s.sampleBtn} onClick={() => setForm({
             nitrogen: "90", phosphorus: "42", potassium: "43",
