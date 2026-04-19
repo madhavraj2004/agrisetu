@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import requests as http_requests
 import pickle
 import numpy as np
 import os
@@ -154,6 +155,94 @@ def market_price(crop: str):
         "unit":    "per quintal (₹)",
         "revenue": price * 8,
     }
+
+@app.get("/api/weather")
+def get_weather(lat: float, lon: float):
+    """
+    Get current weather by GPS coordinates
+    Used to auto-fill temperature, humidity, rainfall in advisory form
+    """
+    WEATHER_KEY = os.getenv("WEATHER_KEY", "")
+    
+    if not WEATHER_KEY:
+        return {"error": "Weather API key not configured"}
+    
+    try:
+        url = (
+            f"https://api.openweathermap.org/data/2.5/weather"
+            f"?lat={lat}&lon={lon}"
+            f"&appid={WEATHER_KEY}"
+            f"&units=metric"
+        )
+        resp = http_requests.get(url, timeout=8)
+        data = resp.json()
+        
+        return {
+            "temperature": round(data["main"]["temp"], 1),
+            "humidity":    data["main"]["humidity"],
+            "rainfall":    round(data.get("rain", {}).get("1h", 0), 1),
+            "description": data["weather"][0]["description"].title(),
+            "city":        data.get("name", "Your Location"),
+            "feels_like":  round(data["main"]["feels_like"], 1),
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/api/live-prices")
+def live_prices(state: str = "West Bengal", commodity: str = "Rice"):
+    """
+    Fetch real mandi prices from data.gov.in (Agmarknet)
+    """
+    DATA_GOV_KEY = os.getenv("DATA_GOV_KEY", "")
+    
+    if not DATA_GOV_KEY:
+        # Return sample data if no API key
+        return {
+            "source": "sample",
+            "records": [
+                {"market": "Siliguri", "commodity": commodity, 
+                 "modal_price": "2100", "date": "19/04/2026"},
+            ]
+        }
+    
+    try:
+        url = (
+            "https://api.data.gov.in/resource/"
+            "9ef84268-d588-465a-a308-a864a43d0070"
+            f"?api-key={DATA_GOV_KEY}"
+            f"&format=json&limit=10"
+            f"&filters%5BState%5D={state}"
+            f"&filters%5BCommodity%5D={commodity}"
+        )
+        resp = http_requests.get(url, timeout=8)
+        data = resp.json()
+        
+        records = []
+        for r in data.get("records", []):
+            records.append({
+                "market":      r.get("Market", ""),
+                "commodity":   r.get("Commodity", commodity),
+                "min_price":   r.get("Min Price", "0"),
+                "max_price":   r.get("Max Price", "0"),
+                "modal_price": r.get("Modal Price", "0"),
+                "date":        r.get("Arrival Date", ""),
+                "state":       r.get("State", state),
+            })
+        
+        return {
+            "source":  "Agmarknet Live",
+            "records": records,
+            "count":   len(records)
+        }
+        
+    except Exception as e:
+        return {
+            "source":  "error",
+            "error":   str(e),
+            "records": []
+        }
 
 @app.get("/api/health")
 def health():
