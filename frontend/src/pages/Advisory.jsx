@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const API = "https://agrisetu-fi4b.onrender.com/";
+const API = "https://agrisetu-fi4b.onrender.com/api";
 
 // Crop info shown without needing backend
 const CROP_INFO = {
