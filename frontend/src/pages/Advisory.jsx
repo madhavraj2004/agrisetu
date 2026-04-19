@@ -67,43 +67,58 @@ export default function Advisory() {
   const [loading, setLoading] = useState(false);
   const [source, setSource]   = useState(""); // "api" or "local"
 
+  React.useEffect(() => {
+    fetch("https://agrisetu-fi4b.onrender.com/api/health")
+      .then(r => r.json())
+      .then(d => console.log("Backend status:", d))
+      .catch(e => console.log("Backend sleeping:", e.message));
+  }, []);
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setResult(null);
+  e.preventDefault();
+  setLoading(true);
+  setResult(null);
 
-    const parsed = Object.fromEntries(
-      Object.entries(form).map(([k, v]) => [k, parseFloat(v)])
-    );
+  const parsed = Object.fromEntries(
+    Object.entries(form).map(([k, v]) => [k, parseFloat(v)])
+  );
 
-    try {
-      const res = await fetch(`${API}/predict`, {
-  method: "POST",
-  headers: { 
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-  },
-  body: JSON.stringify(parsed),
-});
-      const data = await res.json();
+  try {
+    // Wake up Render first (it sleeps after inactivity)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000); // 25 second timeout
 
-      if (data.error) throw new Error(data.error);
+    const res = await fetch(`https://agrisetu-fi4b.onrender.com/api/predict`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify(parsed),
+      signal: controller.signal,
+    });
 
-      setResult(data);
-      setSource("api");
-    } catch (err) {
-      console.log("Backend error:", err.message);
-      // Fallback to rule-based
-      const recs = getRuleBasedRecommendation(parsed);
-      setResult({
-        top_recommendation: recs[0].crop,
-        all_recommendations: recs,
-      });
-      setSource("local");
-    } finally {
-      setLoading(false);
-    }
-  };
+    clearTimeout(timeout);
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    setResult(data);
+    setSource("api");
+
+  } catch (err) {
+    console.error("Backend error:", err.message);
+    const recs = getRuleBasedRecommendation(parsed);
+    setResult({
+      top_recommendation: recs[0].crop,
+      all_recommendations: recs,
+    });
+    setSource("local");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const topCrop = result?.top_recommendation?.toLowerCase();
   const cropInfo = CROP_INFO[topCrop] || {};
@@ -138,8 +153,7 @@ export default function Advisory() {
               </div>
             ))}
             <button type="submit" style={s.btn} disabled={loading}>
-              {loading ? "Analysing your field..." : "Get Crop Recommendation"}
-            </button>
+              {loading ? "Analysing... (may take 20s on first load)" : "Get Crop Recommendation"}            </button>
           </form>
 
           {/* Sample data button for quick demo */}
